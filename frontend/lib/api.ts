@@ -2,7 +2,11 @@
  * API client for the RAG platform backend.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+// Use NEXT_PUBLIC_API_URL in production (Vercel/client), with fallback for local Docker
+const isServer = typeof window === 'undefined'
+const API_BASE = (isServer && process.env.API_URL_SERVER)
+  ? process.env.API_URL_SERVER
+  : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
