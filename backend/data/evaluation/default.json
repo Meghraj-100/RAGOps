@@ -1,0 +1,64 @@
+{
+  "cases": [
+    {
+      "case_id": "case_001",
+      "question": "What is Retrieval Augmented Generation?",
+      "expected_source": "",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "case_002",
+      "question": "How do vector databases store embeddings?",
+      "expected_source": "",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "case_003",
+      "question": "What are the benefits of chunking documents?",
+      "expected_source": "",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "case_004",
+      "question": "How does cosine similarity work for semantic search?",
+      "expected_source": "",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "case_005",
+      "question": "What is the difference between dense and sparse retrieval?",
+      "expected_source": "",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "case_006",
+      "question": "How does reranking improve retrieval quality?",
+      "expected_source": "",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "case_007",
+      "question": "What is reciprocal rank fusion?",
+      "expected_source": "",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "case_008",
+      "question": "How do cross-encoder models differ from bi-encoder models?",
+      "expected_source": "",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "case_009",
+      "question": "What evaluation metrics are used for RAG systems?",
+      "expected_source": "",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "case_010",
+      "question": "How does multi-query retrieval work?",
+      "expected_source": "",
+      "relevant_chunk_ids": []
+    }
+  ]
+}

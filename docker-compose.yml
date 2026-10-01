@@ -1,0 +1,106 @@
+version: "3.9"
+
+services:
+  # ── PostgreSQL + pgvector ────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: raguser
+      POSTGRES_PASSWORD: ragpass
+      POSTGRES_DB: ragdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U raguser -d ragdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Backend ──────────────────────────────────────────
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://raguser:ragpass@postgres:5432/ragdb
+      DATABASE_URL_SYNC: postgresql://raguser:ragpass@postgres:5432/ragdb
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      LLM_MODEL: llama-3.3-70b-versatile
+      LLM_BASE_URL: https://api.groq.com/openai/v1
+      EMBEDDING_MODEL: all-MiniLM-L6-v2
+      EMBEDDING_DIMENSIONS: "384"
+      RERANKER_MODEL: cross-encoder/ms-marco-MiniLM-L-6-v2
+      RERANKER_ENABLED: "true"
+      CHUNK_SIZE: "512"
+      CHUNK_OVERLAP: "50"
+      TOP_K: "5"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://tempo:4317
+      OTEL_SERVICE_NAME: rag-platform
+      API_KEY: ${API_KEY:-dev-api-key}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Next.js Frontend ─────────────────────────────────────────
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - backend
+
+  # ── Prometheus ───────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - promdata:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+
+  # ── Tempo (Trace backend) ───────────────────────────────────
+  tempo:
+    image: grafana/tempo:2.5.0
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "3200:3200"   # Tempo query
+    volumes:
+      - ./observability/tempo/tempo.yml:/etc/tempo.yml
+      - tempodata:/var/tempo
+    command: ["-config.file=/etc/tempo.yml"]
+
+  # ── Grafana ──────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.1.0
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafanadata:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - tempo
+
+volumes:
+  pgdata:
+  promdata:
+  tempodata:
+  grafanadata:

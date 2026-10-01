@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
+
+# Next.js
+frontend/.next/
+frontend/out/
+
+# Python
+*.pyo
+.mypy_cache/
+.ruff_cache/
+
+# Uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml
+
+# Alembic
+alembic.ini.local

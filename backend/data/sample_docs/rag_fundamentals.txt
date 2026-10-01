@@ -1,0 +1,117 @@
+Retrieval-Augmented Generation (RAG)
+
+Retrieval-Augmented Generation (RAG) is a technique that enhances the capabilities of large language models (LLMs) by combining them with external knowledge retrieval. Instead of relying solely on the knowledge encoded in the model's parameters during training, RAG systems retrieve relevant information from a knowledge base at query time and use it as context for generating responses.
+
+How RAG Works
+
+The RAG process follows these key steps:
+
+1. Document Ingestion: Documents are processed, chunked into smaller segments, and converted into vector embeddings using an embedding model. These embeddings are stored in a vector database.
+
+2. Query Processing: When a user asks a question, the query is also converted into a vector embedding using the same embedding model.
+
+3. Retrieval: The query embedding is compared against the stored document embeddings using similarity metrics like cosine similarity. The most relevant chunks are retrieved.
+
+4. Context Assembly: The retrieved chunks are assembled into a context that provides the LLM with relevant information.
+
+5. Generation: The LLM generates a response based on the user's question and the retrieved context. The response should be grounded in the provided information.
+
+Vector Databases
+
+Vector databases are specialized database systems designed to store, index, and query high-dimensional vector embeddings efficiently. Unlike traditional databases that work with structured data, vector databases are optimized for similarity search operations.
+
+Key features of vector databases include:
+- Approximate Nearest Neighbor (ANN) search for fast similarity queries
+- Support for various distance metrics (cosine, euclidean, dot product)
+- Scalable indexing structures (HNSW, IVF, PQ)
+- Integration with embedding models and LLM pipelines
+
+PostgreSQL with the pgvector extension provides vector similarity search capabilities within a traditional relational database, combining the benefits of SQL with vector operations.
+
+Chunking Strategies
+
+Document chunking is the process of splitting large documents into smaller, semantically meaningful segments. Effective chunking is critical for RAG performance because:
+
+- Chunk size affects retrieval precision and recall
+- Too large chunks may contain irrelevant information
+- Too small chunks may lose important context
+- Overlap between chunks helps maintain context continuity
+
+Common chunking approaches:
+- Fixed-size chunking with character or token limits
+- Recursive splitting based on document structure
+- Semantic chunking using embedding similarity
+- Document-aware chunking respecting paragraph and section boundaries
+
+Cosine Similarity
+
+Cosine similarity is a metric used to measure the similarity between two vectors by computing the cosine of the angle between them. It ranges from -1 (exactly opposite) to 1 (exactly the same), with 0 indicating orthogonality.
+
+In the context of semantic search:
+- Documents and queries are represented as high-dimensional vectors
+- Cosine similarity captures semantic relatedness
+- Higher similarity scores indicate more relevant content
+- It is invariant to vector magnitude, focusing on direction
+
+Dense vs Sparse Retrieval
+
+Dense retrieval uses learned vector representations (embeddings) to capture semantic meaning. Each document and query is mapped to a dense vector in a continuous space where similar meanings are close together.
+
+Sparse retrieval uses traditional keyword-based methods like BM25 or TF-IDF. Documents and queries are represented as sparse vectors where most dimensions are zero, with non-zero values corresponding to specific terms.
+
+Key differences:
+- Dense retrieval captures semantic similarity even without exact word matches
+- Sparse retrieval excels at exact keyword matching
+- Hybrid approaches combine both for better coverage
+- Dense retrieval requires pre-trained embedding models
+
+Reranking
+
+Reranking is a technique that improves retrieval quality by applying a more sophisticated model to re-score and reorder initially retrieved candidates. Cross-encoder models are commonly used for reranking.
+
+How reranking works:
+1. Initial retrieval returns a set of candidate documents (e.g., top-20)
+2. A cross-encoder scores each query-document pair jointly
+3. Candidates are reordered based on the cross-encoder scores
+4. The top-k reranked results are used as context
+
+Cross-encoders differ from bi-encoders (used for initial retrieval):
+- Cross-encoders process query and document together, enabling deeper interaction
+- They are more accurate but slower, making them suitable for reranking small candidate sets
+- Bi-encoders encode query and document independently for fast similarity search
+
+Reciprocal Rank Fusion
+
+Reciprocal Rank Fusion (RRF) is a simple and effective method for combining rankings from multiple retrieval systems. It assigns a score to each document based on its rank in each ranking list.
+
+The RRF score for a document d is calculated as:
+RRF(d) = Σ 1/(k + rank_i(d))
+
+where k is a constant (typically 60) and rank_i(d) is the rank of document d in ranking list i.
+
+RRF advantages:
+- No need for score normalization across different ranking systems
+- Robust to outliers in individual rankings
+- Simple to implement and computationally efficient
+- Effective for hybrid search combining dense and sparse retrieval
+
+Evaluation Metrics for RAG
+
+Hit@K measures whether at least one relevant document appears in the top-K retrieved results. It is a binary metric per query.
+
+Mean Reciprocal Rank (MRR) is the average of the reciprocal ranks of the first relevant document across all queries. It rewards retrieving relevant documents at higher positions.
+
+Multi-Query Retrieval
+
+Multi-query retrieval generates multiple reformulations of a user's query to improve retrieval coverage. Different phrasings may retrieve different relevant documents that a single query might miss.
+
+The process:
+1. An LLM generates alternative versions of the original query
+2. Each query variant is used for independent retrieval
+3. Results from all queries are combined and deduplicated
+4. The unified result set provides broader coverage
+
+This approach is particularly useful for:
+- Ambiguous queries that can be interpreted multiple ways
+- Complex questions that cover multiple aspects
+- Queries with domain-specific terminology
