@@ -30,7 +30,7 @@ async def run_rag_pipeline(
     query_log_id = str(uuid.uuid4())
     trace_id = None
 
-    with tracer.start_as_current_span("rag_pipeline") as span:
+    with tracer.start_as_current_span("POST /query") as span:
         span.set_attribute("query_log_id", query_log_id)
         span.set_attribute("retrieval_strategy", strategy)
         span.set_attribute("top_k", top_k)
@@ -41,25 +41,24 @@ async def run_rag_pipeline(
             trace_id = format(ctx.trace_id, '032x')
 
         try:
+            # ── Query Processing ───────────────────────
+            with tracer.start_as_current_span("query_processing"):
+                pass
+
             # ── Retrieval ──────────────────────────────
-            with tracer.start_as_current_span("retrieval") as ret_span:
-                ret_span.set_attribute("strategy", strategy)
-                retriever = get_retriever(strategy)
-                chunks, emb_latency, ret_latency = await retriever.retrieve(question, db, top_k)
-                ret_span.set_attribute("chunks_retrieved", len(chunks))
-                ret_span.set_attribute("embedding_latency_ms", emb_latency)
-                ret_span.set_attribute("retrieval_latency_ms", ret_latency)
+            retriever = get_retriever(strategy)
+            chunks, emb_latency, ret_latency = await retriever.retrieve(question, db, top_k)
+            span.set_attribute("chunks_retrieved", len(chunks))
 
             # ── Context assembly ───────────────────────
-            context = _build_context(chunks)
+            with tracer.start_as_current_span("prompt_construction") as prompt_span:
+                context = _build_context(chunks)
+                user_prompt = USER_PROMPT_TEMPLATE.format(context=context, question=question)
 
             # ── Generation ─────────────────────────────
             gen_start = time.perf_counter()
-            with tracer.start_as_current_span("generation") as gen_span:
+            with tracer.start_as_current_span("llm_generation") as gen_span:
                 gen_span.set_attribute("model", settings.llm_model)
-                user_prompt = USER_PROMPT_TEMPLATE.format(
-                    context=context, question=question
-                )
                 answer, token_usage = await generate(SYSTEM_PROMPT, user_prompt)
                 gen_span.set_attribute("tokens", token_usage.get("total_tokens", 0))
             gen_latency = (time.perf_counter() - gen_start) * 1000

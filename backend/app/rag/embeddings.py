@@ -36,9 +36,15 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     return embeddings.tolist()
 
 
+from app.observability.tracing import get_tracer
+
+tracer = get_tracer()
+
 def embed_text_timed(text: str) -> tuple[list[float], float]:
     """Generate embedding and return (embedding, latency_ms)."""
     start = time.perf_counter()
-    emb = embed_text(text)
+    with tracer.start_as_current_span("query_embedding") as span:
+        span.set_attribute("embedding_model", settings.embedding_model)
+        emb = embed_text(text)
     latency_ms = (time.perf_counter() - start) * 1000
     return emb, latency_ms

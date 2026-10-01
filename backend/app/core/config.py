@@ -1,5 +1,6 @@
 """Application configuration loaded from environment variables."""
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
@@ -11,9 +12,15 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://raguser:ragpass@localhost:5432/ragdb"
     database_url_sync: str = "postgresql://raguser:ragpass@localhost:5432/ragdb"
 
+    @field_validator("database_url", "database_url_sync", mode="before")
+    def clean_database_url(cls, v: str) -> str:
+        if isinstance(v, str):
+            return v.strip().strip("'\"")
+        return v
+
     # LLM — Groq free tier
     groq_api_key: str = ""
-    llm_model: str = "llama-3.3-70b-versatile"
+    llm_model: str = "qwen/qwen3.8-27b"
     llm_base_url: str = "https://api.groq.com/openai/v1"
     llm_temperature: float = 0.1
     llm_max_tokens: int = 1024
@@ -31,12 +38,16 @@ class Settings(BaseSettings):
     chunk_overlap: int = 50
     top_k: int = 5
 
-    # API security
+    # API security & CORS
     api_key: str = ""
+    cors_origins: str = "http://localhost:3000,http://frontend:3000,http://localhost:3002"
 
     # Observability
+    otel_enabled: bool = True
     otel_exporter_otlp_endpoint: str = "http://localhost:4317"
+    otel_exporter_otlp_headers: str = ""
     otel_service_name: str = "rag-platform"
+    prometheus_enabled: bool = True
 
     # Evaluation
     eval_regression_threshold: float = 0.02

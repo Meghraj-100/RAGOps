@@ -184,6 +184,10 @@ async def query(req: QueryRequest, db: AsyncSession = Depends(get_db)):
         RAG_RETRIEVAL_LATENCY.labels(strategy=req.strategy).observe(result.retrieval_latency_ms / 1000)
         RAG_EMBEDDING_LATENCY.observe(result.embedding_latency_ms / 1000)
         RAG_GENERATION_LATENCY.observe(result.generation_latency_ms / 1000)
+        
+        # New Metrics
+        from app.observability.metrics import RAG_RETRIEVED_DOCUMENTS
+        RAG_RETRIEVED_DOCUMENTS.labels(strategy=req.strategy).observe(len(result.sources))
 
         return result
     except Exception as e:

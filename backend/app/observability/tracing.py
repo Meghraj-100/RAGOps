@@ -16,14 +16,27 @@ _tracer: trace.Tracer | None = None
 
 def setup_tracing():
     """Initialize OpenTelemetry tracing with OTLP exporter."""
+    if not settings.otel_enabled:
+        logger.info("otel_tracing_disabled")
+        return
+
     resource = Resource.create({"service.name": settings.otel_service_name})
     provider = TracerProvider(resource=resource)
 
     try:
-        exporter = OTLPSpanExporter(endpoint=settings.otel_exporter_otlp_endpoint, insecure=True)
+        insecure = not settings.otel_exporter_otlp_endpoint.startswith("https")
+        headers = None
+        if settings.otel_exporter_otlp_headers:
+            headers = dict(item.split("=") for item in settings.otel_exporter_otlp_headers.split(","))
+
+        exporter = OTLPSpanExporter(
+            endpoint=settings.otel_exporter_otlp_endpoint,
+            insecure=insecure,
+            headers=headers
+        )
         processor = BatchSpanProcessor(exporter)
         provider.add_span_processor(processor)
-        logger.info("otel_tracing_configured", endpoint=settings.otel_exporter_otlp_endpoint)
+        logger.info("otel_tracing_configured", endpoint=settings.otel_exporter_otlp_endpoint, insecure=insecure)
     except Exception as e:
         logger.warning("otel_tracing_setup_failed", error=str(e))
 

@@ -53,6 +53,26 @@ RAG_GENERATION_LATENCY = Histogram(
     buckets=[0.1, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0],
 )
 
+RAG_RERANKING_LATENCY = Histogram(
+    "rag_reranking_latency_seconds",
+    "Reranking stage latency",
+    buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5],
+)
+
+EVALUATION_DURATION = Histogram(
+    "evaluation_duration_seconds",
+    "Time taken to run a full evaluation",
+    ["strategy"],
+    buckets=[1.0, 5.0, 15.0, 30.0, 60.0, 120.0, 300.0],
+)
+
+RAG_RETRIEVED_DOCUMENTS = Histogram(
+    "rag_retrieved_documents_count",
+    "Number of documents retrieved per query",
+    ["strategy"],
+    buckets=[1, 3, 5, 10, 20, 50],
+)
+
 # ── Gauges ──────────────────────────────────────────────────────
 ACTIVE_QUERIES = Gauge(
     "rag_active_queries",

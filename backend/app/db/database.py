@@ -18,8 +18,9 @@ def get_engine():
     if _engine is None:
         from app.core.config import get_settings
         settings = get_settings()
+        db_url = settings.database_url.strip().strip("'\"")
         _engine = create_async_engine(
-            settings.database_url,
+            db_url,
             echo=False,
             pool_size=5,
             max_overflow=10,

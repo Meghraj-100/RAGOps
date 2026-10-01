@@ -12,10 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.models.models import Chunk, Document
 from app.rag.embeddings import embed_text, embed_text_timed
+from app.observability.tracing import get_tracer
 import structlog
 
 logger = structlog.get_logger()
 settings = get_settings()
+tracer = get_tracer()
 
 
 class RetrievedChunk:
@@ -61,16 +63,18 @@ class VectorRetriever(BaseRetriever):
         query_embedding, emb_latency = embed_text_timed(query)
 
         start = time.perf_counter()
-        # pgvector cosine distance: <=> operator. Lower = more similar.
-        result = await db.execute(
-            text("""
+        with tracer.start_as_current_span("vector_retrieval") as vspan:
+            vspan.set_attribute("top_k", top_k)
+            # pgvector cosine distance: <=> operator. Lower = more similar.
+            result = await db.execute(
+                text("""
                 SELECT c.id, c.document_id, c.content, c.chunk_index,
                        d.filename AS document_filename,
-                       1 - (c.embedding <=> :embedding::vector) AS score
+                       1 - (c.embedding <=> CAST(:embedding AS vector)) AS score
                 FROM chunks c
                 JOIN documents d ON d.id = c.document_id
                 WHERE d.status = 'completed'
-                ORDER BY c.embedding <=> :embedding::vector
+                ORDER BY c.embedding <=> CAST(:embedding AS vector)
                 LIMIT :top_k
             """),
             {"embedding": str(query_embedding), "top_k": top_k},
@@ -99,17 +103,18 @@ class HybridRetriever(BaseRetriever):
         query_embedding, emb_latency = embed_text_timed(query)
 
         start = time.perf_counter()
-
-        # Dense vector results
-        vector_result = await db.execute(
-            text("""
+        with tracer.start_as_current_span("vector_retrieval") as vspan:
+            vspan.set_attribute("top_k", top_k * 2)
+            # Dense vector results
+            vector_result = await db.execute(
+                text("""
                 SELECT c.id, c.document_id, c.content, c.chunk_index,
                        d.filename AS document_filename,
-                       1 - (c.embedding <=> :embedding::vector) AS score
+                       1 - (c.embedding <=> CAST(:embedding AS vector)) AS score
                 FROM chunks c
                 JOIN documents d ON d.id = c.document_id
                 WHERE d.status = 'completed'
-                ORDER BY c.embedding <=> :embedding::vector
+                ORDER BY c.embedding <=> CAST(:embedding AS vector)
                 LIMIT :limit
             """),
             {"embedding": str(query_embedding), "limit": top_k * 2},
@@ -202,14 +207,16 @@ class RerankingRetriever(BaseRetriever):
 
         start = time.perf_counter()
         if candidates:
-            reranker = self._get_reranker()
-            pairs = [(query, c.content) for c in candidates]
-            scores = reranker.predict(pairs)
-
-            for i, c in enumerate(candidates):
-                c.score = float(scores[i])
-
-            candidates.sort(key=lambda x: x.score, reverse=True)
+            with tracer.start_as_current_span("reranking") as rspan:
+                rspan.set_attribute("model", settings.reranker_model)
+                reranker = self._get_reranker()
+                pairs = [(query, c.content) for c in candidates]
+                scores = reranker.predict(pairs)
+    
+                for i, c in enumerate(candidates):
+                    c.score = float(scores[i])
+    
+                candidates.sort(key=lambda x: x.score, reverse=True)
 
         rerank_latency = (time.perf_counter() - start) * 1000
         total_ret_latency = vec_latency + rerank_latency

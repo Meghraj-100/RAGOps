@@ -63,6 +63,8 @@ async def run_evaluation(
     cases = load_eval_dataset(dataset_name)
     retriever = get_retriever(strategy)
 
+    eval_start = time.perf_counter()
+
     case_results = []
     hit_at_1_scores = []
     hit_at_3_scores = []
@@ -177,4 +179,9 @@ async def run_evaluation(
         hit_at_1=eval_run.hit_at_1, hit_at_5=eval_run.hit_at_5,
         mrr=eval_run.mrr, regression=regression,
     )
+
+    from app.observability.metrics import EVALUATION_DURATION
+    duration_sec = time.perf_counter() - eval_start
+    EVALUATION_DURATION.labels(strategy=strategy).observe(duration_sec)
+
     return eval_run

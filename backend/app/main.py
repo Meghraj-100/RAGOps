@@ -50,17 +50,20 @@ app = FastAPI(
 )
 
 # CORS
+origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://frontend:3000"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Mount Prometheus metrics
-metrics_app = make_asgi_app()
-app.mount("/metrics", metrics_app)
+if settings.prometheus_enabled:
+    metrics_app = make_asgi_app()
+    app.mount("/metrics", metrics_app)
 
 # Include API routes
 app.include_router(router)
