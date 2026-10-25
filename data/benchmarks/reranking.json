@@ -1,0 +1,19 @@
+{
+  "id": "b10dc2de-0748-4aa0-a625-c3d5d1a8519c",
+  "strategy": "reranking",
+  "dataset_name": "benchmark",
+  "llm_model": "qwen/qwen3.8-27b",
+  "embedding_model": "all-MiniLM-L6-v2",
+  "reranker_model": "cross-encoder/ms-marco-MiniLM-L-6-v2",
+  "top_k": 5,
+  "total_cases": 50,
+  "hit_at_1": 1.0,
+  "hit_at_3": 1.0,
+  "hit_at_5": 1.0,
+  "mrr": 1.0,
+  "avg_latency_ms": 643.73,
+  "p50_latency_ms": 634.56,
+  "p95_latency_ms": 873.48,
+  "regression_detected": false,
+  "created_at": "2026-10-01T21:22:58.445744Z"
+}

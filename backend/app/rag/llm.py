@@ -30,6 +30,9 @@ async def generate(
     Generate a response from the LLM.
     Returns (text, usage_dict).
     """
+    if not settings.groq_api_key or settings.groq_api_key in {"", "your-groq-api-key-here"}:
+        raise ValueError("LLM generation unavailable: GROQ_API_KEY is not configured on the server")
+
     client = _get_client()
     temp = temperature if temperature is not None else settings.llm_temperature
     max_tok = max_tokens if max_tokens is not None else settings.llm_max_tokens

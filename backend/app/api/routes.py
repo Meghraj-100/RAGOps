@@ -1,6 +1,7 @@
 """API v1 route definitions."""
 
 import time
+from pathlib import Path
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Query
@@ -8,6 +9,7 @@ from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.core.security import verify_api_key
 from app.db.database import get_db
 from app.models.models import Document, Chunk, QueryLog, EvaluationRun
 from app.schemas.schemas import (
@@ -52,7 +54,7 @@ async def health_check(db: AsyncSession = Depends(get_db)):
 
 
 # ── Dashboard ───────────────────────────────────────────────────
-@router.get("/dashboard", response_model=DashboardStats)
+@router.get("/dashboard", response_model=DashboardStats, dependencies=[Depends(verify_api_key)])
 async def get_dashboard(db: AsyncSession = Depends(get_db)):
     """Dashboard stats — all values from real database queries."""
     total_docs = (await db.execute(select(func.count()).select_from(Document))).scalar() or 0
@@ -112,17 +114,24 @@ async def get_dashboard(db: AsyncSession = Depends(get_db)):
 
 
 # ── Documents ───────────────────────────────────────────────────
-@router.get("/documents", response_model=DocumentListResponse)
-async def list_documents(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Document).order_by(desc(Document.created_at)))
+@router.get("/documents", response_model=DocumentListResponse, dependencies=[Depends(verify_api_key)])
+async def list_documents(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+):
+    total = (await db.execute(select(func.count()).select_from(Document))).scalar() or 0
+    result = await db.execute(
+        select(Document).order_by(desc(Document.created_at)).limit(limit).offset(offset)
+    )
     docs = result.scalars().all()
     return DocumentListResponse(
         documents=[DocumentOut.model_validate(d) for d in docs],
-        total=len(docs),
+        total=total,
     )
 
 
-@router.get("/documents/{doc_id}", response_model=DocumentOut)
+@router.get("/documents/{doc_id}", response_model=DocumentOut, dependencies=[Depends(verify_api_key)])
 async def get_document(doc_id: UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Document).where(Document.id == doc_id))
     doc = result.scalar_one_or_none()
@@ -131,26 +140,30 @@ async def get_document(doc_id: UUID, db: AsyncSession = Depends(get_db)):
     return DocumentOut.model_validate(doc)
 
 
-@router.post("/documents/ingest", response_model=DocumentOut, status_code=201)
+@router.post("/documents/ingest", response_model=DocumentOut, status_code=201, dependencies=[Depends(verify_api_key)])
 async def ingest(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
     """Upload and ingest a document (PDF, TXT, DOCX)."""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
 
-    ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
+    clean_filename = Path(file.filename).name.strip()
+    if not clean_filename or clean_filename.startswith("."):
+        raise HTTPException(status_code=400, detail="Invalid filename provided")
+
+    ext = clean_filename.rsplit(".", 1)[-1].lower() if "." in clean_filename else ""
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
             detail=f"Unsupported file type: {ext}. Allowed: {ALLOWED_EXTENSIONS}",
         )
 
-    content = await file.read()
     max_size = settings.max_upload_size_mb * 1024 * 1024
+    content = await file.read(max_size + 1)
     if len(content) > max_size:
         raise HTTPException(status_code=413, detail=f"File too large. Max: {settings.max_upload_size_mb}MB")
 
     try:
-        doc = await ingest_document(file.filename, content, file.content_type or "", db)
+        doc = await ingest_document(clean_filename, content, file.content_type or "", db)
         return DocumentOut.model_validate(doc)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -159,7 +172,7 @@ async def ingest(file: UploadFile = File(...), db: AsyncSession = Depends(get_db
         raise HTTPException(status_code=500, detail="Document ingestion failed")
 
 
-@router.delete("/documents/{doc_id}", status_code=204)
+@router.delete("/documents/{doc_id}", status_code=204, dependencies=[Depends(verify_api_key)])
 async def delete_document(doc_id: UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Document).where(Document.id == doc_id))
     doc = result.scalar_one_or_none()
@@ -169,7 +182,7 @@ async def delete_document(doc_id: UUID, db: AsyncSession = Depends(get_db)):
 
 
 # ── Query ───────────────────────────────────────────────────────
-@router.post("/query", response_model=QueryResponse)
+@router.post("/query", response_model=QueryResponse, dependencies=[Depends(verify_api_key)])
 async def query(req: QueryRequest, db: AsyncSession = Depends(get_db)):
     """Execute a RAG query."""
     ACTIVE_QUERIES.inc()
@@ -199,9 +212,9 @@ async def query(req: QueryRequest, db: AsyncSession = Depends(get_db)):
 
 
 # ── Query Logs ──────────────────────────────────────────────────
-@router.get("/queries", response_model=list[QueryLogOut])
+@router.get("/queries", response_model=list[QueryLogOut], dependencies=[Depends(verify_api_key)])
 async def list_queries(
-    limit: int = Query(default=50, le=200),
+    limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
 ):
@@ -211,7 +224,7 @@ async def list_queries(
     return [QueryLogOut.model_validate(q) for q in result.scalars().all()]
 
 
-@router.get("/queries/{query_id}", response_model=QueryLogDetailOut)
+@router.get("/queries/{query_id}", response_model=QueryLogDetailOut, dependencies=[Depends(verify_api_key)])
 async def get_query(query_id: UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(QueryLog).where(QueryLog.id == query_id))
     q = result.scalar_one_or_none()
@@ -221,15 +234,19 @@ async def get_query(query_id: UUID, db: AsyncSession = Depends(get_db)):
 
 
 # ── Evaluations ─────────────────────────────────────────────────
-@router.get("/evaluations", response_model=list[EvalRunOut])
-async def list_evaluations(db: AsyncSession = Depends(get_db)):
+@router.get("/evaluations", response_model=list[EvalRunOut], dependencies=[Depends(verify_api_key)])
+async def list_evaluations(
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(
-        select(EvaluationRun).order_by(desc(EvaluationRun.created_at))
+        select(EvaluationRun).order_by(desc(EvaluationRun.created_at)).limit(limit).offset(offset)
     )
     return [EvalRunOut.model_validate(e) for e in result.scalars().all()]
 
 
-@router.get("/evaluations/{eval_id}", response_model=EvalRunDetailOut)
+@router.get("/evaluations/{eval_id}", response_model=EvalRunDetailOut, dependencies=[Depends(verify_api_key)])
 async def get_evaluation(eval_id: UUID, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(EvaluationRun).where(EvaluationRun.id == eval_id))
     e = result.scalar_one_or_none()
@@ -238,7 +255,7 @@ async def get_evaluation(eval_id: UUID, db: AsyncSession = Depends(get_db)):
     return EvalRunDetailOut.model_validate(e)
 
 
-@router.post("/evaluations/run", response_model=EvalRunOut, status_code=201)
+@router.post("/evaluations/run", response_model=EvalRunOut, status_code=201, dependencies=[Depends(verify_api_key)])
 async def run_eval(req: EvalRunRequest, db: AsyncSession = Depends(get_db)):
     """Execute an evaluation run against a dataset."""
     try:
@@ -247,12 +264,14 @@ async def run_eval(req: EvalRunRequest, db: AsyncSession = Depends(get_db)):
         return EvalRunOut.model_validate(eval_run)
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error("eval_run_failed", error=str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/evaluations/compare/{run_a_id}/{run_b_id}", response_model=EvalCompareResponse)
+@router.get("/evaluations/compare/{run_a_id}/{run_b_id}", response_model=EvalCompareResponse, dependencies=[Depends(verify_api_key)])
 async def compare_evaluations(
     run_a_id: UUID, run_b_id: UUID, db: AsyncSession = Depends(get_db)
 ):

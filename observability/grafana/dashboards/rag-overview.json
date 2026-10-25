@@ -136,6 +136,33 @@
       "fieldConfig": {
         "defaults": { "unit": "s" }
       }
+    },
+    {
+      "title": "Reranking Latency",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(rag_reranking_latency_seconds_bucket[5m]))",
+          "legendFormat": "P95 Reranking",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "s" }
+      }
+    },
+    {
+      "title": "Retrieved Documents",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(rag_retrieved_documents_count_bucket[5m]))",
+          "legendFormat": "P95 Retrieved - {{strategy}}",
+          "refId": "A"
+        }
+      ]
     }
   ],
   "schemaVersion": 39,

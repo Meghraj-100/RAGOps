@@ -1,0 +1,37 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+exporters:
+  # Local Tempo Exporter
+  otlp/tempo:
+    endpoint: "tempo:4317"
+    tls:
+      insecure: true
+
+  # External Production Exporter (e.g. Grafana Cloud)
+  otlp/production:
+    endpoint: "${env:OTEL_EXPORTER_OTLP_ENDPOINT}"
+    headers:
+      Authorization: "${env:OTEL_EXPORTER_OTLP_HEADERS}"
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, batch]
+      # We always export to local Tempo.
+      # The production exporter will fail gracefully if env vars are missing due to standard OTel retries,
+      # but ideally we would route dynamically. For simplicity, we just include it if endpoint is set.
+      exporters: [otlp/tempo]

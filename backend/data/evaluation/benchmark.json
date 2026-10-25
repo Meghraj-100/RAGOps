@@ -1,0 +1,304 @@
+{
+  "cases": [
+    {
+      "case_id": "benchmark_001",
+      "question": "What is Retrieval-Augmented Generation (RAG)?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_002",
+      "question": "Why is RAG used instead of relying solely on LLM parameters?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_003",
+      "question": "What are the 5 key steps of the RAG process?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_004",
+      "question": "What happens during the Document Ingestion step?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_005",
+      "question": "How is the query processed in RAG?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_006",
+      "question": "What metric is commonly used to compare query embeddings and document embeddings?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_007",
+      "question": "What happens during the Context Assembly step?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_008",
+      "question": "How does the Generation step in RAG ensure the response is grounded?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_009",
+      "question": "What is the main purpose of vector databases?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_010",
+      "question": "How do vector databases differ from traditional databases?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_011",
+      "question": "What is Approximate Nearest Neighbor (ANN) search used for?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_012",
+      "question": "What distance metrics are supported by vector databases?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_013",
+      "question": "Name some scalable indexing structures used in vector databases.",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_014",
+      "question": "Which PostgreSQL extension provides vector similarity search capabilities?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_015",
+      "question": "What is document chunking?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_016",
+      "question": "Why is chunk size important for RAG performance?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_017",
+      "question": "What happens if chunks are too large?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_018",
+      "question": "What happens if chunks are too small?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_019",
+      "question": "Why is overlap between chunks useful?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_020",
+      "question": "What is fixed-size chunking?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_021",
+      "question": "What is recursive splitting based on?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_022",
+      "question": "What is semantic chunking?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_023",
+      "question": "What is document-aware chunking?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_024",
+      "question": "How is cosine similarity calculated?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_025",
+      "question": "What is the range of cosine similarity values?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_026",
+      "question": "What does a cosine similarity of 0 indicate?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_027",
+      "question": "What do higher cosine similarity scores indicate?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_028",
+      "question": "Why is cosine similarity invariant to vector magnitude?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_029",
+      "question": "What does dense retrieval use to capture semantic meaning?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_030",
+      "question": "What methods does sparse retrieval use?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_031",
+      "question": "What are the characteristics of sparse vectors in sparse retrieval?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_032",
+      "question": "What is the main difference between dense and sparse retrieval regarding exact keyword matches?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_033",
+      "question": "Which retrieval method excels at exact keyword matching?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_034",
+      "question": "What do hybrid retrieval approaches combine?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_035",
+      "question": "What is the purpose of reranking in a RAG system?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_036",
+      "question": "What type of model is commonly used for reranking?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_037",
+      "question": "How does the reranking process work step-by-step?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_038",
+      "question": "What is the difference between cross-encoders and bi-encoders?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_039",
+      "question": "Why are cross-encoders more suitable for reranking small candidate sets rather than initial retrieval?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_040",
+      "question": "What is Reciprocal Rank Fusion (RRF)?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_041",
+      "question": "How is the RRF score calculated for a document?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_042",
+      "question": "What is the typical value for the constant k in the RRF formula?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_043",
+      "question": "What are the advantages of using RRF?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_044",
+      "question": "Why doesn't RRF need score normalization?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_045",
+      "question": "What does the Hit@K metric measure?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_046",
+      "question": "What is Mean Reciprocal Rank (MRR)?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_047",
+      "question": "Why does MRR reward retrieving relevant documents at higher positions?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_048",
+      "question": "What is the goal of multi-query retrieval?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_049",
+      "question": "How does multi-query retrieval generate alternative queries?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    },
+    {
+      "case_id": "benchmark_050",
+      "question": "What types of queries benefit most from multi-query retrieval?",
+      "expected_source": "rag_fundamentals.txt",
+      "relevant_chunk_ids": []
+    }
+  ]
+}

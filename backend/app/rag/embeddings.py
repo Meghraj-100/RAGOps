@@ -2,20 +2,21 @@
 
 import time
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from typing import Any
 from app.core.config import get_settings
 import structlog
 
 logger = structlog.get_logger()
 settings = get_settings()
 
-_model: SentenceTransformer | None = None
+_model: Any | None = None
 
 
-def _get_model() -> SentenceTransformer:
+def _get_model():
     """Lazy-load the embedding model."""
     global _model
     if _model is None:
+        from sentence_transformers import SentenceTransformer
         logger.info("loading_embedding_model", model=settings.embedding_model)
         _model = SentenceTransformer(settings.embedding_model)
         logger.info("embedding_model_loaded", model=settings.embedding_model)

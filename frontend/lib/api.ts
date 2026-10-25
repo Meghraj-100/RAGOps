@@ -8,13 +8,18 @@ const API_BASE = (isServer && process.env.API_URL_SERVER)
   ? process.env.API_URL_SERVER
   : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || ''
+
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(API_KEY ? { 'X-API-Key': API_KEY } : {}),
+    ...(options?.headers as Record<string, string> | undefined),
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    headers,
   })
   if (!res.ok) {
     const errorBody = await res.text()
@@ -155,16 +160,27 @@ export const api = {
   uploadDocument: async (file: File): Promise<Document> => {
     const formData = new FormData()
     formData.append('file', file)
+    const headers: Record<string, string> = {
+      ...(API_KEY ? { 'X-API-Key': API_KEY } : {}),
+    }
     const res = await fetch(`${API_BASE}/api/v1/documents/ingest`, {
       method: 'POST',
       body: formData,
+      headers,
     })
     if (!res.ok) throw new Error(`Upload failed: ${await res.text()}`)
     return res.json()
   },
 
   deleteDocument: async (id: string): Promise<void> => {
-    await fetch(`${API_BASE}/api/v1/documents/${id}`, { method: 'DELETE' })
+    const headers: Record<string, string> = {
+      ...(API_KEY ? { 'X-API-Key': API_KEY } : {}),
+    }
+    const res = await fetch(`${API_BASE}/api/v1/documents/${id}`, {
+      method: 'DELETE',
+      headers,
+    })
+    if (!res.ok) throw new Error(`Delete failed: ${await res.text()}`)
   },
 
   query: (question: string, strategy: string, topK: number) =>

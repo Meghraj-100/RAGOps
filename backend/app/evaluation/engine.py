@@ -19,15 +19,26 @@ import structlog
 logger = structlog.get_logger()
 settings = get_settings()
 
-EVAL_DATA_DIR = Path(__file__).parent.parent.parent / "data" / "evaluation"
+import re
+
+EVAL_DATA_DIR = (Path(__file__).parent.parent.parent / "data" / "evaluation").resolve()
 
 
 def load_eval_dataset(dataset_name: str = "default") -> list[dict]:
-    """Load evaluation cases from JSON file."""
-    filepath = EVAL_DATA_DIR / f"{dataset_name}.json"
-    if not filepath.exists():
-        raise FileNotFoundError(f"Evaluation dataset not found: {filepath}")
-    with open(filepath) as f:
+    """Load evaluation cases from JSON file with strict path-traversal protection."""
+    if not dataset_name or not re.match(r"^[a-zA-Z0-9_\-]+$", dataset_name):
+        raise ValueError("Invalid dataset name: only alphanumeric characters, underscores, and hyphens are permitted")
+
+    filepath = (EVAL_DATA_DIR / f"{dataset_name}.json").resolve()
+    try:
+        filepath.relative_to(EVAL_DATA_DIR)
+    except ValueError:
+        raise ValueError("Access denied: path traversal detected")
+
+    if not filepath.exists() or not filepath.is_file():
+        raise FileNotFoundError(f"Evaluation dataset '{dataset_name}' not found")
+
+    with open(filepath, "r", encoding="utf-8") as f:
         data = json.load(f)
     return data.get("cases", data) if isinstance(data, dict) else data
 

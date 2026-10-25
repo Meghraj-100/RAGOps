@@ -38,9 +38,11 @@ def get_session_factory():
 
 
 # Aliases for backward compat
-@property
-def engine():
-    return get_engine()
+def __getattr__(name: str):
+    if name == "engine":
+        return get_engine()
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
 
 
 async def get_db() -> AsyncSession:

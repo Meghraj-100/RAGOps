@@ -112,23 +112,58 @@ Regression detection: if Hit@5 or MRR drops below threshold vs. previous run, ex
 
 ## Observability
 
-### OpenTelemetry Traces
-Every RAG query generates a trace with spans for: `rag_pipeline → retrieval → generation → persist_query_log`.
+This project includes a complete, production-ready observability stack using OpenTelemetry and Prometheus.
+
+### Architecture
+```mermaid
+graph TB
+    Backend[FastAPI Backend] -->|OTLP Traces| OTel[OpenTelemetry Collector]
+    Backend -->|/metrics endpoint| Prometheus[Prometheus]
+    OTel -->|OTLP| Tempo[Tempo]
+    OTel -.->|OTLP (Prod)| Hosted[Grafana Cloud / External]
+    Prometheus --> Grafana[Grafana]
+    Tempo --> Grafana
+```
+
+1. **OpenTelemetry (OTel)** instrumented via the Python SDK generates distributed traces for every request.
+2. **OpenTelemetry Collector** receives traces, batches them, and routes them to trace backends.
+3. **Tempo** acts as the local trace storage backend.
+4. **Prometheus** periodically scrapes the `/metrics` endpoint to collect aggregated counters and histograms.
+5. **Grafana** visualizes both metrics (dashboards) and traces (query exploration).
+
+### Distributed Tracing
+A single RAG query (`POST /query`) becomes a distributed trace with the following structure:
+```
+POST /query
+│
+├── query_processing
+├── query_embedding (attr: model, latency)
+├── vector_retrieval (attr: top_k, chunk_count)
+├── reranking (if applicable, attr: model)
+├── prompt_construction
+└── llm_generation (attr: model, token_usage)
+```
 
 ### Prometheus Metrics
-| Metric | Type | Description |
-|--------|------|-------------|
-| `rag_queries_total` | Counter | Total queries by strategy |
-| `rag_query_errors_total` | Counter | Failed queries |
-| `rag_query_latency_seconds` | Histogram | End-to-end latency |
-| `rag_retrieval_latency_seconds` | Histogram | Retrieval stage |
-| `rag_embedding_latency_seconds` | Histogram | Embedding generation |
-| `rag_generation_latency_seconds` | Histogram | LLM generation |
-| `documents_ingested_total` | Counter | Ingested documents |
-| `evaluation_runs_total` | Counter | Eval runs |
+The backend exposes prometheus metrics at `/metrics`:
+- **Counters**: `rag_queries_total`, `rag_query_errors_total`, `documents_ingested_total`, `evaluation_runs_total`
+- **Histograms**: `rag_query_latency_seconds`, `rag_retrieval_latency_seconds`, `rag_embedding_latency_seconds`, `rag_generation_latency_seconds`, `rag_reranking_latency_seconds`, `evaluation_duration_seconds`, `rag_retrieved_documents_count`
+- **Gauges**: `rag_active_queries`
 
-### Grafana Dashboard
-Auto-provisioned with panels for: requests/sec, error rate, P50/P95/P99 latency, retrieval/embedding/generation breakdown.
+### Local Observability Stack
+Run `docker compose up` to start the local observability stack (OTel Collector, Tempo, Prometheus, Grafana). 
+View the auto-provisioned **RAG Platform Overview** dashboard at `http://localhost:3001` (admin/admin).
+Explore traces by querying the Tempo data source in Grafana based on `trace_id` returned in the API response.
+
+### Production Telemetry (OTLP Export)
+Do **not** run Grafana/Tempo/Prometheus on your production application servers. Instead, configure the backend to export directly to a hosted OTLP endpoint (e.g., Grafana Cloud, Datadog) using environment variables:
+```env
+OTEL_ENABLED=true
+OTEL_EXPORTER_OTLP_ENDPOINT=https://otlp-gateway-xxx.grafana.net/otlp
+OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic xxxxxxxx
+PROMETHEUS_ENABLED=true
+```
+If the exporter fails (e.g., hosted service is down), the RAG application will log a warning but **will continue to serve RAG requests normally** (no single point of failure).
 
 ## API
 
@@ -298,13 +333,33 @@ No paid API dependencies in CI.
 | Database | Neon, Supabase | Any managed PostgreSQL with pgvector |
 | Observability | Grafana Cloud | Self-hosted |
 
-### Deployment checklist
-- [ ] Set all environment variables
-- [ ] Configure CORS for production domain
-- [ ] Enable HTTPS
-- [ ] Set a strong API_KEY
-- [ ] Use managed PostgreSQL with pgvector
-- [ ] Configure Grafana Cloud or self-hosted for traces/metrics
+## Final Deployment Checklist
+
+**LOCAL**
+- [x] Backend starts
+- [x] Frontend starts
+- [x] PostgreSQL/pgvector works
+- [x] Document ingestion works
+- [x] RAG query works
+- [x] Evaluation works
+- [x] `/metrics` works
+- [x] OpenTelemetry traces generated
+- [x] Prometheus receives metrics
+- [x] Tempo receives traces
+- [x] Grafana displays metrics
+- [x] Grafana displays traces
+
+**PRODUCTION**
+- [ ] Backend deployed
+- [ ] Frontend deployed
+- [ ] Database connected
+- [ ] Environment variables configured
+- [ ] CORS configured
+- [ ] RAG query works remotely
+- [ ] Production telemetry export configured
+- [ ] Production traces verified
+- [ ] Production metrics verified
+- [ ] Telemetry failure does not break RAG
 
 ## Performance Benchmarking
 

@@ -16,10 +16,16 @@ logger = structlog.get_logger()
 settings = get_settings()
 
 
+def __getattr__(name: str):
+    if name == "engine":
+        return get_engine()
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup / shutdown lifecycle."""
-    logger.info("starting_application", service=settings.otel_service_name)
+    logger.info("starting_application", service=settings.otel_service_name, env=settings.environment)
 
     # Initialize tracing
     setup_tracing()
@@ -49,12 +55,25 @@ app = FastAPI(
     openapi_url="/openapi.json",
 )
 
+
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    """Enforce defensive HTTP security headers on all responses."""
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    return response
+
+
 # CORS
 origins = [origin.strip() for origin in settings.cors_origins.split(",") if origin.strip()]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=origins if origins else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

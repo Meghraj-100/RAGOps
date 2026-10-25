@@ -107,9 +107,9 @@ class EvalCaseInput(BaseModel):
 
 
 class EvalRunRequest(BaseModel):
-    strategy: str = "vector-similarity"
-    dataset_name: str = "default"
-    top_k: int = 5
+    strategy: str = Field(default="vector-similarity", pattern=r"^[a-zA-Z0-9_\-]+$")
+    dataset_name: str = Field(default="default", max_length=100, pattern=r"^[a-zA-Z0-9_\-]+$")
+    top_k: int = Field(default=5, ge=1, le=50)
 
 
 class EvalRunOut(BaseModel):

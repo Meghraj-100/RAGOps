@@ -62,9 +62,14 @@ def extract_text(content: bytes, file_type: str) -> str:
 
 
 def chunk_text(text: str, chunk_size: int | None = None, overlap: int | None = None) -> list[str]:
-    """Split text into overlapping chunks of roughly chunk_size characters."""
-    cs = chunk_size or settings.chunk_size
-    ov = overlap or settings.chunk_overlap
+    """Split text into overlapping chunks of roughly chunk_size characters with strict boundary validation."""
+    cs = chunk_size if chunk_size is not None else settings.chunk_size
+    ov = overlap if overlap is not None else settings.chunk_overlap
+
+    if cs <= 0:
+        raise ValueError("chunk_size must be greater than 0")
+    if ov < 0 or ov >= cs:
+        raise ValueError(f"overlap must be non-negative and strictly less than chunk_size ({cs})")
 
     # Normalize whitespace
     text = " ".join(text.split())
@@ -73,12 +78,13 @@ def chunk_text(text: str, chunk_size: int | None = None, overlap: int | None = N
 
     chunks = []
     start = 0
+    step = cs - ov
     while start < len(text):
         end = start + cs
         chunk = text[start:end]
         if chunk.strip():
             chunks.append(chunk.strip())
-        start = end - ov
+        start += step
 
     return chunks
 
@@ -95,14 +101,17 @@ async def ingest_document(
     db: AsyncSession,
 ) -> Document:
     """Full ingestion pipeline: validate → extract → chunk → embed → store."""
+    clean_filename = Path(filename).name.strip()
+    if not clean_filename or clean_filename.startswith("."):
+        raise ValueError("Invalid or unsafe filename provided")
 
-    file_type = get_file_extension(filename)
+    file_type = get_file_extension(clean_filename)
     if file_type not in ALLOWED_EXTENSIONS:
         raise ValueError(f"Unsupported file type: {file_type}. Allowed: {ALLOWED_EXTENSIONS}")
 
     # Create document record
     doc = Document(
-        filename=filename,
+        filename=clean_filename,
         file_type=file_type,
         file_size=len(content),
         status="processing",
@@ -112,7 +121,7 @@ async def ingest_document(
 
     try:
         # Extract text
-        logger.info("extracting_text", filename=filename, file_type=file_type)
+        logger.info("extracting_text", filename=clean_filename, file_type=file_type)
         text = extract_text(content, file_type)
         if not text.strip():
             raise ValueError("Document is empty — no text could be extracted")
